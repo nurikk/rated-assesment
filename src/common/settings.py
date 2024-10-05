@@ -8,6 +8,7 @@ from pydantic import PostgresDsn
 
 class Settings(pydantic_settings.BaseSettings):
     DATABASE_URL: str = "postgresql+psycopg://localhost:5432/rated"
+    LOGS_SOURCE_DIR: str = "/tmp/logs"
 
 
 @lru_cache()

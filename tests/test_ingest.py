@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 import pathlib
 
 from bytewax._bytewax import run_main
@@ -7,7 +6,7 @@ from bytewax.connectors.files import DirSource
 from bytewax.testing import TestingSink
 
 from ingest.log_parser import get_log_parser_flow
-from ingest.sinks.sql_model_sink import SqlModelSink
+from ingest.sinks.sql_alchemy_sink import SqlAlchemySink
 from models import ResourceStatisticsByDay
 
 
@@ -38,7 +37,7 @@ def test_ingest_file():
 
 
 def test_sqlmodel_sink(test_source, in_memory_db):
-    test_sink = SqlModelSink(model_cls=ResourceStatisticsByDay)
+    test_sink = SqlAlchemySink(model_cls=ResourceStatisticsByDay)
 
     flow = get_log_parser_flow(source=test_source, sink=test_sink)
     run_main(flow)

@@ -1,19 +1,31 @@
-from tortoise import Tortoise
+from typing import Annotated
 
-from src.common.settings import get_settings
+from fastapi import Depends
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+
+from common.settings import get_settings
 
 settings = get_settings()
-TORTOISE_ORM = {
-    "connections": {"default": settings.DATABASE_URL},
-    "apps": {
-        "models": {
-            "models": ["src.models"],
-            "default_connection": "default",
-        }
-    }
-}
 
 
-async def init():
-    await Tortoise.init(config=TORTOISE_ORM)
-    # await Tortoise.generate_schemas()
+def get_engine():
+    return create_engine(settings.DATABASE_URL)
+
+
+def get_db() -> Session:
+    engine = get_engine()
+    # SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = sessionmaker(autocommit=False, autoflush=False, bind=engine)()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+DatabaseDep = Annotated[Session, Depends(get_db)]
+
+
+
+
+

@@ -3,13 +3,23 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from models import ResourceStatisticsByDay
+from api import schemas
+from common import crud
+from common import db
 
-# /customers/:id/stats?from=YYYY-MM-DD
 customers_router = APIRouter(prefix="/customers")
 
 
-@customers_router.get("/{customer_id}/stats", response_model=list[dict])
-async def stats(customer_id: str, date_from: Annotated[datetime.date | None, Query(alias='from')] = None):
-    qs = ResourceStatisticsByDay.filter(customer_id=customer_id, date__gte=date_from)
-    return await ResourceStatisticsByDayPydantic.from_queryset(qs)
+@customers_router.get("/{customer_id}/stats",
+                      response_model=list[schemas.ResourceStatisticsByDaySchema])
+async def stats_action(session: db.DatabaseDep,
+                       customer_id: str,
+                       from_date: Annotated[datetime.date, Query(alias='from')]):
+    data = crud.get_statistics(
+        session=session,
+        customer_id=customer_id,
+        from_date=from_date
+    )
+    return [
+        schemas.ResourceStatisticsByDaySchema.model_validate(row) for row in data
+    ]

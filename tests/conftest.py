@@ -1,13 +1,18 @@
 import datetime
+import os
+from typing import Generator, Any
 
 import pytest
 from bytewax.testing import TestingSource
+from fastapi import FastAPI
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
-from tortoise import Tortoise
-from tortoise.contrib.test import getDBConfig, _init_db
 
-from api.server import app
-from models import ResourceStatisticsByDay
+from api.server import get_application
+from common import db
+from models import Base, ResourceStatisticsByDay
+from sqlalchemy import insert
 
 
 @pytest.fixture
@@ -31,56 +36,84 @@ def test_source():
     ])
 
 
-@pytest.fixture(scope="module")
-def anyio_backend() -> str:
-    return "asyncio"
+# Default to using sqlite in memory for fast tests.
+# Can be overridden by environment variable for testing in CI against other
+# database engines
+SQLALCHEMY_DATABASE_URL = os.getenv('TEST_DATABASE_URL', "sqlite://")
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+
+Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def app() -> Generator[FastAPI, Any, None]:
+    """
+    Create a fresh database on each test case.
+    """
+    Base.metadata.create_all(engine)  # Create the tables.
+    _app = get_application()
+    yield _app
+    Base.metadata.drop_all(engine)
 
 
 @pytest.fixture
-def in_memory_db(request, event_loop):
-    config = getDBConfig(app_label="models", modules=["models"])
-    event_loop.run_until_complete(_init_db(config))
-    request.addfinalizer(
-        lambda: event_loop.run_until_complete(Tortoise._drop_databases())
+def db_session(app: FastAPI) -> Generator[Session, Any, None]:
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection)
+    yield session  # use the session in tests.
+    session.close()
+    transaction.rollback()
+    connection.close()
+
+
+@pytest.fixture()
+def client(app: FastAPI, db_session: Session) -> Generator[TestClient, Any, None]:
+    def _get_test_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[db.get_db] = _get_test_db
+    with TestClient(app) as client:
+        yield client
+
+
+@pytest.fixture
+def sample_stats(db_session: Session):
+    # insert some sample data
+    db_session.execute(
+        insert(ResourceStatisticsByDay).values([
+            {
+                'customer_id': 'cust_1',
+                'date': datetime.date(2024, 9, 1),
+                'success_requests': 1,
+                'failed_requests': 1,
+                'duration_mean': 0.1,
+                'duration_p50': 0.1,
+                'duration_p99': 0.1,
+            },
+            {
+                'customer_id': 'cust_1',
+                'date': datetime.date(2024, 9, 2),
+                'success_requests': 2,
+                'failed_requests': 2,
+                'duration_mean': 0.2,
+                'duration_p50': 0.2,
+                'duration_p99': 0.2,
+            },
+            {
+                'customer_id': 'cust_1',
+                'date': datetime.date(2024, 9, 3),
+                'success_requests': 3,
+                'failed_requests': 3,
+                'duration_mean': 0.3,
+                'duration_p50': 0.3,
+                'duration_p99': 0.3,
+            }
+        ])
     )
-
-
-@pytest.fixture
-def test_client():
-    client = TestClient(app)
-    yield client
-
-
-@pytest.fixture
-def db_mock(in_memory_db, event_loop):
-    async def code():
-        await ResourceStatisticsByDay.create(
-            customer_id="cust_1",
-            date=datetime.date(2024, 9, 1),
-            success_requests=2,
-            failed_requests=3,
-            duration_mean=1.551,
-            duration_p50=1.000,
-            duration_p99=1.400,
-        )
-        await ResourceStatisticsByDay.create(
-            customer_id="cust_1",
-            date=datetime.date(2024, 9, 3),
-            success_requests=2,
-            failed_requests=3,
-            duration_mean=1.551,
-            duration_p50=1.000,
-            duration_p99=1.400,
-        )
-        await ResourceStatisticsByDay.create(
-            customer_id="cust_1",
-            date=datetime.date(2024, 9, 5),
-            success_requests=2,
-            failed_requests=3,
-            duration_mean=1.551,
-            duration_p50=4.000,
-            duration_p99=4.400,
-        )
-
-
-    event_loop.run_until_complete(code())

@@ -1,0 +1,54 @@
+version: "3.8"
+name: rated-assessment
+volumes:
+  pgdata: null
+
+networks:
+  postgres-db-network:
+      driver: bridge
+services:
+  app:
+    image: rated-assessment
+    environment:
+      DATABASE_URL: postgresql+psycopg://rated:rated@db:5432/rated
+    command: uvicorn api.server:app --port 8888 --host 0.0.0.0
+    ports:
+      - "8888:8888"
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+  db:
+    image: postgres:17-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: rated
+      POSTGRES_PASSWORD: rated
+      POSTGRES_DB: rated
+    expose:
+      - 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  db-migration:
+    image: rated-assessment
+    environment:
+      DATABASE_URL: postgresql+psycopg://rated:rated@db:5432/rated
+
+    depends_on:
+      - db
+    restart: "no"
+    entrypoint: [ "bash", "-c", "python -m scripts.init_schema"]
+
+  bytewax:
+    image: rated-assessment
+    environment:
+      DATABASE_URL: postgresql+psycopg://rated:rated@db:5432/rated
+      LOGS_SOURCE_DIR: /data/logs
+
+    depends_on:
+      - db-migration
+    restart: "no"
+    entrypoint: [ "bash", "-c", "python -m bytewax.run ingest/log_parser.py" ]
+    volumes:
+      - ./logs:/data/logs

@@ -15,11 +15,13 @@ sqlalchemy = "*"
 tortoise-orm = {extras = ["asyncpg"], version = "*"}
 aerich = "*"
 psycopg = {extras = ["binary"], version = "*"}
+uvicorn = "*"
 
 [dev-packages]
 pytest = "*"
 pytest-asyncio = "*"
 httpx = "*"
+pytest-sqlalchemy-mock = "*"
 
 [requires]
 python_version = "3.12"
