@@ -11,11 +11,15 @@ bytewax = "*"
 alembic = "*"
 sqlmodel = "*"
 asyncpg = "*"
-sqlalchemy = {extras = ["asyncio", "postgresql_asyncpg"], version = "*"}
+sqlalchemy = "*"
+tortoise-orm = {extras = ["asyncpg"], version = "*"}
+aerich = "*"
+psycopg = {extras = ["binary"], version = "*"}
 
 [dev-packages]
 pytest = "*"
 pytest-asyncio = "*"
+httpx = "*"
 
 [requires]
 python_version = "3.12"

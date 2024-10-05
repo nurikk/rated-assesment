@@ -7,7 +7,7 @@ from pydantic import PostgresDsn
 
 
 class Settings(pydantic_settings.BaseSettings):
-    DATABASE_URL: PostgresDsn
+    DATABASE_URL: str = "postgresql+psycopg://localhost:5432/rated"
 
 
 @lru_cache()

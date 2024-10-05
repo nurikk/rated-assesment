@@ -2,17 +2,6 @@ import random
 import datetime
 import sys
 
-random.seed(42)  # Set seed before generating durations
-
-
-
-
-# Possible values for log fields
-customer_ids = [f"cust_{i}" for i in range(1, 51)]
-request_paths = ["/api/v1/resource1", "/api/v1/resource2", "/api/v1/resource3", "/api/v1/resource4"]
-status_codes = [200, 201, 400, 401, 403, 404, 500]
-durations = [random.uniform(0.1, 2.0) for _ in range(num_entries)]
-
 
 # Function to generate random timestamp
 def generate_timestamp():
@@ -25,6 +14,14 @@ if __name__ == "__main__":
     # Parameters
     log_file = sys.argv[1] or "api_requests.log"
     num_entries = int(sys.argv[2]) or 10000
+
+    random.seed(42)  # Set seed before generating durations
+
+    # Possible values for log fields
+    customer_ids = [f"cust_{i}" for i in range(1, 51)]
+    request_paths = ["/api/v1/resource1", "/api/v1/resource2", "/api/v1/resource3", "/api/v1/resource4"]
+    status_codes = [200, 201, 400, 401, 403, 404, 500]
+    durations = [random.uniform(0.1, 2.0) for _ in range(num_entries)]
 
     # Generate log entries
     with open(log_file, "w") as f:
