@@ -18,4 +18,3 @@ class ResourceStatisticsByDaySchema(pydantic.BaseModel):
     uptime_percentage: float
 
     model_config = ConfigDict(from_attributes=True)
-

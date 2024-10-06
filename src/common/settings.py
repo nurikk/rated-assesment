@@ -7,6 +7,7 @@ from typing import Annotated
 import pydantic_settings
 from fastapi import Depends
 from pydantic import PostgresDsn
+
 DOTENV = os.path.join(os.path.dirname(__file__), "../../.env")
 
 

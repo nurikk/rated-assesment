@@ -1,11 +1,7 @@
-from contextlib import asynccontextmanager
-
 import uvicorn
 from fastapi import FastAPI
 
 from api.routers.stats import customers_router
-from common import db
-from models import Base
 
 
 def get_application() -> FastAPI:

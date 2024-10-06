@@ -1,11 +1,10 @@
 import contextlib
 from functools import lru_cache
-from typing import Annotated, AsyncIterator, Any
+from typing import Annotated, AsyncIterator
 
 from fastapi import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncConnection, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import sessionmaker, Session
 
 from common.settings import get_settings
 
