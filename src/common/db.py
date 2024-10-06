@@ -61,7 +61,7 @@ class DatabaseSessionManager:
 
 @lru_cache
 def get_async_session_maker():
-    return DatabaseSessionManager(str(settings.DATABASE_URL), {"echo": True})
+    return DatabaseSessionManager(str(settings.DATABASE_URL))
 
 
 async def get_db_session():
