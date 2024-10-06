@@ -30,4 +30,4 @@ jobs:
         pipenv install --deploy --dev
     - name: Test with pytest
       run: |
-        python -m pytest --cov-report term-missing --cov=src tests/
+       pipenv run pytest --cov-report term-missing --cov=src tests/
