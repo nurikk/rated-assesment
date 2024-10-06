@@ -10,7 +10,7 @@ settings = get_settings()
 
 
 def get_engine():
-    return create_engine(settings.DATABASE_URL)
+    return create_engine(str(settings.DATABASE_URL), isolation_level="AUTOCOMMIT")
 
 
 def get_db() -> Session:

@@ -22,19 +22,17 @@ from models import ResourceStatisticsByDay
 align_to = datetime(2024, 1, 1, tzinfo=timezone.utc)
 
 
-def calc_avg(window_out: Tuple[str, Tuple[
-    Tuple[int, list[LogRecord]],
-    Tuple[int, WindowMetadata]
-]]) -> dict:
-    (customer_id, ((_, records), (_, window_meta))) = window_out
+def calc_avg(window_out: Tuple[str,  Tuple[int, list[LogRecord]]]) -> dict:
+    customer_id, (_, records) = window_out
+    sorted_durations = sorted(r.duration for r in records)
     return {
         "customer_id": customer_id,
         "date": records[0].date,
         "success_requests": sum(1 for r in records if r.is_success),
         "failed_requests": sum(1 for r in records if not r.is_success),
-        "duration_mean": statistics.fmean(r.duration for r in records),
-        "duration_p50": utils.percentile_sorted(sorted(r.duration for r in records), 50),
-        "duration_p99": utils.percentile_sorted(sorted(r.duration for r in records), 99),
+        "duration_mean": statistics.fmean(sorted_durations),
+        "duration_p50": utils.percentile_sorted(sorted_durations, 50),
+        "duration_p99": utils.percentile_sorted(sorted_durations, 99),
     }
 
 
@@ -48,8 +46,7 @@ def get_log_parser_flow(source: Source, sink: Sink,
     clock = EventClock(ts_getter=lambda e: e.date, wait_for_system_duration=timedelta.max)
     windower = TumblingWindower(length=window_length, align_to=align_to)
     win_out = window_op.collect_window(step_id="add", up=keyed_stream, clock=clock, windower=windower)
-    merged_stream = op.join("join", win_out.down, win_out.meta, insert_mode="product")
-    stats = op.map("stats", merged_stream, calc_avg)
+    stats = op.map("stats", win_out.down, calc_avg)
     op.output("out", stats, sink)
     return log_parser_flow
 
@@ -57,7 +54,7 @@ def get_log_parser_flow(source: Source, sink: Sink,
 settings = get_settings()
 
 flow = get_log_parser_flow(
-    source=DirSource(pathlib.Path(settings.LOGS_SOURCE_DIR), glob_pat="*.log"),
+    source=DirSource(settings.LOGS_SOURCE_DIR, glob_pat="*.log"),
     sink=SqlAlchemySink(engine=db.get_engine(),
                         model_cls=ResourceStatisticsByDay,
                         index_elements=["customer_id", "date"],
