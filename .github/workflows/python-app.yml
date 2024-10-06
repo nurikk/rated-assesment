@@ -29,5 +29,8 @@ jobs:
       run: |
         pipenv install --deploy --dev
     - name: Test with pytest
+      env:
+        LOGS_SOURCE_DIR: /tmp/logs
       run: |
-       pipenv run pytest --cov-report term-missing --cov=src tests/
+        mkdir -p $LOGS_SOURCE_DIR
+        pipenv run pytest --cov-report term-missing --cov=src tests/
