@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "fac3cbdc76c2ff5c974f2761dc343cffea4abba0614c6f7984295239dcd13ee3"
+            "sha256": "9ca6cadbb4b83a863373f981d8c72dba30af9514a30294746b1c19fd3c68097b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -471,7 +471,7 @@
                 "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d",
                 "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8"
             ],
-            "markers": "python_version < '3.13'",
+            "markers": "python_version >= '3.8'",
             "version": "==4.12.2"
         },
         "uvicorn": {
@@ -488,6 +488,15 @@
         }
     },
     "develop": {
+        "aiosqlite": {
+            "hashes": [
+                "sha256:36a1deaca0cac40ebe32aac9977a6e2bbc7f5189f23f4a54d5908986729e5bd6",
+                "sha256:6d35c8c256637f4672f843c31021464090805bf925385ac39473fb16eaaca3d7"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==0.20.0"
+        },
         "anyio": {
             "hashes": [
                 "sha256:137b4559cbb034c477165047febb6ff83f390fc3b20bf181c1fc0a728cb8beeb",
@@ -749,7 +758,7 @@
                 "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d",
                 "sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8"
             ],
-            "markers": "python_version < '3.13'",
+            "markers": "python_version >= '3.8'",
             "version": "==4.12.2"
         }
     }
