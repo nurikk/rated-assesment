@@ -1,3 +1,4 @@
+import datetime
 import os
 import pathlib
 from functools import lru_cache
@@ -14,6 +15,8 @@ class Settings(pydantic_settings.BaseSettings):
 
     DATABASE_URL: PostgresDsn = "postgresql+psycopg://localhost:5432/rated"
     LOGS_SOURCE_DIR: pathlib.Path = "/tmp/logs"
+
+    WAIT_FOR_SYSTEM_DURATION: datetime.timedelta = datetime.timedelta.max
 
 
 @lru_cache()

@@ -1,5 +1,3 @@
-import asyncio
-import pathlib
 import statistics
 from datetime import timedelta, timezone, datetime
 from typing import Tuple
@@ -9,7 +7,7 @@ from bytewax.connectors.files import DirSource
 from bytewax.dataflow import Dataflow
 from bytewax.inputs import Source
 from bytewax.operators import windowing as window_op
-from bytewax.operators.windowing import TumblingWindower, EventClock, WindowMetadata
+from bytewax.operators.windowing import TumblingWindower, EventClock
 from bytewax.outputs import Sink
 
 from common import db
@@ -22,7 +20,7 @@ from models import ResourceStatisticsByDay
 align_to = datetime(2024, 1, 1, tzinfo=timezone.utc)
 
 
-def calc_avg(window_out: Tuple[str,  Tuple[int, list[LogRecord]]]) -> dict:
+def calc_avg(window_out: Tuple[str, Tuple[int, list[LogRecord]]]) -> dict:
     customer_id, (_, records) = window_out
     sorted_durations = sorted(r.duration for r in records)
     uptime_duration = tuple(r.duration for r in records if r.is_success)
@@ -44,13 +42,14 @@ def calc_avg(window_out: Tuple[str,  Tuple[int, list[LogRecord]]]) -> dict:
 
 
 def get_log_parser_flow(source: Source, sink: Sink,
-                        window_length: timedelta = timedelta(days=1)) -> Dataflow:
+                        window_length: timedelta = timedelta(days=1),
+                        wait_for_system_duration=timedelta.max) -> Dataflow:
     log_parser_flow = Dataflow("log_parser")
     logs_stream = op.input(step_id="inp", flow=log_parser_flow, source=source)
     parsed_logs = op.map(step_id="parse", up=logs_stream, mapper=LogRecord.from_string)
     filtered_logs = op.filter(step_id="filter", up=parsed_logs, predicate=lambda e: e is not None)
     keyed_stream = op.key_on(step_id="key_on_customer_id", up=filtered_logs, key=lambda e: e.customer_id)
-    clock = EventClock(ts_getter=lambda e: e.date, wait_for_system_duration=timedelta.max)
+    clock = EventClock(ts_getter=lambda e: e.date, wait_for_system_duration=wait_for_system_duration)
     windower = TumblingWindower(length=window_length, align_to=align_to)
     win_out = window_op.collect_window(step_id="add", up=keyed_stream, clock=clock, windower=windower)
     stats = op.map("stats", win_out.down, calc_avg)
@@ -67,4 +66,5 @@ flow = get_log_parser_flow(
                         index_elements=["customer_id", "date"],
                         set_elements=['success_requests', 'failed_requests',
                                       'duration_mean', 'duration_p50', 'duration_p99',
-                                      'uptime_percentage']))
+                                      'uptime_percentage']),
+    wait_for_system_duration=settings.WAIT_FOR_SYSTEM_DURATION)
