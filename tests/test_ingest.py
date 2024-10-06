@@ -7,7 +7,7 @@ from bytewax.testing import TestingSink
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-from ingest.log_parser import get_log_parser_flow
+from ingest.log_parser import get_log_parser_flow, calc_statistics
 from ingest.models import LogRecord
 from ingest.sinks.sql_alchemy_sink import SqlAlchemySink
 from models import ResourceStatisticsByDay
@@ -54,3 +54,42 @@ def test_sqlmodel_sink(test_source, sync_engine):
 ])
 def test_log_parser(log, expected):
     assert LogRecord.from_string(log) == expected
+
+
+@pytest.mark.parametrize("window_out, expected", [
+    (
+        ("cust_1", (0, [
+            LogRecord(date=datetime.datetime(2024, 9, 1, 0, 0, tzinfo=datetime.timezone.utc), customer_id='cust_1', is_success=True, duration=1.0),
+            LogRecord(date=datetime.datetime(2024, 9, 1, 0, 0, tzinfo=datetime.timezone.utc), customer_id='cust_1', is_success=False, duration=2.0),
+            LogRecord(date=datetime.datetime(2024, 9, 1, 0, 0, tzinfo=datetime.timezone.utc), customer_id='cust_1', is_success=True, duration=3.0),
+        ])),
+        {
+            "customer_id": "cust_1",
+            "date": datetime.datetime(2024, 9, 1, 0, 0, tzinfo=datetime.timezone.utc),
+            "success_requests": 2,
+            "failed_requests": 1,
+            "duration_mean": 2.0,
+            "duration_p50": 2.0,
+            "duration_p99": 3.0,
+            "uptime_percentage": 66.66666666666666
+        }
+    ),
+    (
+        ("cust_2", (0, [
+            LogRecord(date=datetime.datetime(2024, 9, 2, 0, 0, tzinfo=datetime.timezone.utc), customer_id='cust_2', is_success=False, duration=4.0),
+            LogRecord(date=datetime.datetime(2024, 9, 2, 0, 0, tzinfo=datetime.timezone.utc), customer_id='cust_2', is_success=False, duration=5.0),
+        ])),
+        {
+            "customer_id": "cust_2",
+            "date": datetime.datetime(2024, 9, 2, 0, 0, tzinfo=datetime.timezone.utc),
+            "success_requests": 0,
+            "failed_requests": 2,
+            "duration_mean": 4.5,
+            "duration_p50": 4.0,
+            "duration_p99": 5.0,
+            "uptime_percentage": 0.0
+        }
+    ),
+])
+def test_calc_statistics(window_out, expected):
+    assert calc_statistics(window_out) == expected

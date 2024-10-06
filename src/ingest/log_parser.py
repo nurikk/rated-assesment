@@ -20,7 +20,7 @@ from models import ResourceStatisticsByDay
 align_to = datetime(2024, 1, 1, tzinfo=timezone.utc)
 
 
-def calc_avg(window_out: Tuple[str, Tuple[int, list[LogRecord]]]) -> dict:
+def calc_statistics(window_out: Tuple[str, Tuple[int, list[LogRecord]]]) -> dict:
     customer_id, (_, records) = window_out
     sorted_durations = sorted(r.duration for r in records)
     uptime_duration = tuple(r.duration for r in records if r.is_success)
@@ -52,7 +52,7 @@ def get_log_parser_flow(source: Source, sink: Sink,
     clock = EventClock(ts_getter=lambda e: e.date, wait_for_system_duration=wait_for_system_duration)
     windower = TumblingWindower(length=window_length, align_to=align_to)
     win_out = window_op.collect_window(step_id="add", up=keyed_stream, clock=clock, windower=windower)
-    stats = op.map("stats", win_out.down, calc_avg)
+    stats = op.map("stats", win_out.down, calc_statistics)
     op.output("out", stats, sink)
     return log_parser_flow
 
