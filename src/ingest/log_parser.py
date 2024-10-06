@@ -25,14 +25,21 @@ align_to = datetime(2024, 1, 1, tzinfo=timezone.utc)
 def calc_avg(window_out: Tuple[str,  Tuple[int, list[LogRecord]]]) -> dict:
     customer_id, (_, records) = window_out
     sorted_durations = sorted(r.duration for r in records)
+    uptime_duration = tuple(r.duration for r in records if r.is_success)
+    downtime_duration = tuple(r.duration for r in records if not r.is_success)
+    uptime = sum(uptime_duration)
+    downtime = sum(downtime_duration)
+    total_time = uptime + downtime
+    uptime_percentage = (uptime / total_time) * 100 if total_time > 0 else 0.0
     return {
         "customer_id": customer_id,
         "date": records[0].date,
-        "success_requests": sum(1 for r in records if r.is_success),
-        "failed_requests": sum(1 for r in records if not r.is_success),
+        "success_requests": len(uptime_duration),
+        "failed_requests": len(downtime_duration),
         "duration_mean": statistics.fmean(sorted_durations),
         "duration_p50": utils.percentile_sorted(sorted_durations, 50),
         "duration_p99": utils.percentile_sorted(sorted_durations, 99),
+        "uptime_percentage": uptime_percentage
     }
 
 
@@ -59,4 +66,5 @@ flow = get_log_parser_flow(
                         model_cls=ResourceStatisticsByDay,
                         index_elements=["customer_id", "date"],
                         set_elements=['success_requests', 'failed_requests',
-                                      'duration_mean', 'duration_p50', 'duration_p99']))
+                                      'duration_mean', 'duration_p50', 'duration_p99',
+                                      'uptime_percentage']))

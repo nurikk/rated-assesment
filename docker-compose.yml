@@ -18,6 +18,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    depends_on:
+      db-migration:
+        condition: service_completed_successfully
 
   db:
     image: postgres:17-alpine
@@ -26,6 +29,12 @@ services:
       POSTGRES_USER: rated
       POSTGRES_PASSWORD: rated
       POSTGRES_DB: rated
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: "pg_isready --username=rated"
+      interval: 2s
+      timeout: 3s
+      retries: 3
     expose:
       - 5432
     volumes:
@@ -34,18 +43,18 @@ services:
   db-migration:
     image: rated-assessment
     environment: *env
-
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: "no"
     entrypoint: [ "bash", "-c", "python -m scripts.init_schema"]
 
   bytewax:
     image: rated-assessment
     environment: *env
-
     depends_on:
-      - db-migration
+      db-migration:
+        condition: service_completed_successfully
     restart: "no"
     entrypoint: [ "bash", "-c", "python -m bytewax.run ingest/log_parser.py" ]
     volumes:

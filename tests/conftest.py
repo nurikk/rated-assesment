@@ -91,6 +91,7 @@ async def sample_stats(session_fixture):
                 'duration_mean': 0.1,
                 'duration_p50': 0.1,
                 'duration_p99': 0.1,
+                'uptime_percentage': 11.1,
             },
             {
                 'customer_id': 'cust_1',
@@ -100,6 +101,7 @@ async def sample_stats(session_fixture):
                 'duration_mean': 0.2,
                 'duration_p50': 0.2,
                 'duration_p99': 0.2,
+                'uptime_percentage': 22.22,
             },
             {
                 'customer_id': 'cust_1',
@@ -109,6 +111,7 @@ async def sample_stats(session_fixture):
                 'duration_mean': 0.3,
                 'duration_p50': 0.3,
                 'duration_p99': 0.3,
+                'uptime_percentage': 33.3,
             }
         ])
     )

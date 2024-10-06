@@ -20,6 +20,7 @@ async def test_stats(client, sample_stats):
             'duration_p50': 0.3,
             'duration_p99': 0.3,
             'failed_requests': 3,
-            'success_requests': 3
+            'success_requests': 3,
+            'uptime_percentage': 33.3
         }
     ]

@@ -22,8 +22,10 @@ def test_flow(test_source):
     cust_1_data = [e for e in out if e["customer_id"] == "cust_1"]
     success_requests = sum(e["success_requests"] for e in cust_1_data)
     failed_requests = sum(e["failed_requests"] for e in cust_1_data)
+    uptime_percentage = sum(e["uptime_percentage"] for e in cust_1_data)
     assert success_requests == 2
     assert failed_requests == 3
+    assert uptime_percentage == 49.37238493723849
 
 
 def test_sqlmodel_sink(test_source, sync_engine):

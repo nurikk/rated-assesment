@@ -23,3 +23,5 @@ class ResourceStatisticsByDay(Base):
     duration_mean: orm.Mapped[float] = orm.mapped_column(sqlalchemy.Float())
     duration_p50: orm.Mapped[float] = orm.mapped_column(sqlalchemy.Float())
     duration_p99: orm.Mapped[float] = orm.mapped_column(sqlalchemy.Float())
+
+    uptime_percentage: orm.Mapped[float] = orm.mapped_column(sqlalchemy.Float())
