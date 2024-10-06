@@ -9,9 +9,10 @@ networks:
 services:
   app:
     image: rated-assessment
-    environment:
+    restart: always
+    environment: &env
       DATABASE_URL: postgresql+psycopg://rated:rated@db:5432/rated
-    command: uvicorn api.server:app --port 8888 --host 0.0.0.0
+      LOGS_SOURCE_DIR: /data/logs
     ports:
       - "8888:8888"
     build:
@@ -32,8 +33,7 @@ services:
 
   db-migration:
     image: rated-assessment
-    environment:
-      DATABASE_URL: postgresql+psycopg://rated:rated@db:5432/rated
+    environment: *env
 
     depends_on:
       - db
@@ -42,9 +42,7 @@ services:
 
   bytewax:
     image: rated-assessment
-    environment:
-      DATABASE_URL: postgresql+psycopg://rated:rated@db:5432/rated
-      LOGS_SOURCE_DIR: /data/logs
+    environment: *env
 
     depends_on:
       - db-migration

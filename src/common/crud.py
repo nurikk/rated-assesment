@@ -1,13 +1,16 @@
 import datetime
 from typing import Type
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import ResourceStatisticsByDay
 
 
-def get_statistics(session: Session, customer_id: str, from_date: datetime.date) -> list[Type[ResourceStatisticsByDay]]:
-    return session.query(ResourceStatisticsByDay).filter(
+async def get_statistics(session: AsyncSession, customer_id: str, from_date: datetime.date) -> list[Type[ResourceStatisticsByDay]]:
+    query = select(ResourceStatisticsByDay).filter(
         ResourceStatisticsByDay.customer_id == customer_id,
         ResourceStatisticsByDay.date >= from_date
-    ).all()
+    )
+    data = await session.execute(query)
+    return data.scalars().all()

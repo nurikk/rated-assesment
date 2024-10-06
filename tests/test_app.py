@@ -1,4 +1,8 @@
-def test_stats(client, sample_stats):
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_stats(client, sample_stats):
     response = client.get("/customers/cust_1/stats")
     assert response.status_code == 422
 

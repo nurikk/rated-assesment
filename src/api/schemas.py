@@ -1,6 +1,7 @@
 import datetime
 
 import pydantic
+from pydantic import ConfigDict
 
 
 class ResourceStatisticsByDaySchema(pydantic.BaseModel):
@@ -14,5 +15,5 @@ class ResourceStatisticsByDaySchema(pydantic.BaseModel):
     duration_p50: float
     duration_p99: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+

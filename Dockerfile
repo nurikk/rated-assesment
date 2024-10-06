@@ -28,4 +28,5 @@ RUN --mount=type=cache,target=/home/appuser/.cache/pipenv \
 COPY src ./src
 
 WORKDIR /app/src
-EXPOSE 3000
+EXPOSE 8888
+CMD ["uvicorn", "api.server:app", "--port", "8888", "--host", "0.0.0.0"]

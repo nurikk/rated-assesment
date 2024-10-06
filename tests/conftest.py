@@ -1,18 +1,25 @@
 import datetime
-import os
-from typing import Generator, Any
+from contextlib import ExitStack
+from typing import AsyncGenerator
 
 import pytest
+import pytest_asyncio
 from bytewax.testing import TestingSource
-from fastapi import FastAPI
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import StaticPool, create_engine
+from sqlalchemy import insert
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from starlette.testclient import TestClient
 
 from api.server import get_application
 from common import db
 from models import Base, ResourceStatisticsByDay
-from sqlalchemy import insert
+
+
+@pytest.fixture
+def sync_engine():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(engine)
+    return engine
 
 
 @pytest.fixture
@@ -36,57 +43,45 @@ def test_source():
     ])
 
 
-# Default to using sqlite in memory for fast tests.
-# Can be overridden by environment variable for testing in CI against other
-# database engines
-SQLALCHEMY_DATABASE_URL = os.getenv('TEST_DATABASE_URL', "sqlite://")
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-
-Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
 @pytest.fixture(autouse=True)
-def app() -> Generator[FastAPI, Any, None]:
-    """
-    Create a fresh database on each test case.
-    """
-    Base.metadata.create_all(engine)  # Create the tables.
-    _app = get_application()
-    yield _app
-    Base.metadata.drop_all(engine)
+def app():
+    with ExitStack():
+        yield get_application()
+
+
+@pytest_asyncio.fixture
+async def session_fixture() -> AsyncGenerator[AsyncSession, None]:
+    async_engine = create_async_engine(
+        "sqlite+aiosqlite://",
+        echo=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    async_session_maker = async_sessionmaker(
+        bind=async_engine, expire_on_commit=False
+    )
+    async with async_session_maker() as session:
+        yield session
 
 
 @pytest.fixture
-def db_session(app: FastAPI) -> Generator[Session, Any, None]:
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = Session(bind=connection)
-    yield session  # use the session in tests.
-    session.close()
-    transaction.rollback()
-    connection.close()
-
-
-@pytest.fixture()
-def client(app: FastAPI, db_session: Session) -> Generator[TestClient, Any, None]:
-    def _get_test_db():
+def client(app, session_fixture):
+    async def _get_test_db():
         try:
-            yield db_session
+            yield session_fixture
         finally:
             pass
 
-    app.dependency_overrides[db.get_db] = _get_test_db
-    with TestClient(app) as client:
-        yield client
+    app.dependency_overrides[db.get_db_session] = _get_test_db
+    with TestClient(app) as c:
+        yield c
 
 
-@pytest.fixture
-def sample_stats(db_session: Session):
-    # insert some sample data
-    db_session.execute(
+@pytest_asyncio.fixture
+async def sample_stats(session_fixture):
+    await session_fixture.execute(
         insert(ResourceStatisticsByDay).values([
             {
                 'customer_id': 'cust_1',

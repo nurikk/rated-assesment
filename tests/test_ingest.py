@@ -7,7 +7,6 @@ from bytewax.testing import TestingSink
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-from conftest import engine
 from ingest.log_parser import get_log_parser_flow
 from ingest.models import LogRecord
 from ingest.sinks.sql_alchemy_sink import SqlAlchemySink
@@ -27,8 +26,8 @@ def test_flow(test_source):
     assert failed_requests == 3
 
 
-def test_sqlmodel_sink(test_source, db_session: Session):
-    test_sink = SqlAlchemySink(engine=engine,
+def test_sqlmodel_sink(test_source, sync_engine):
+    test_sink = SqlAlchemySink(engine=sync_engine,
                                model_cls=ResourceStatisticsByDay,
                                index_elements=["customer_id", "date"],
                                set_elements=['success_requests', 'failed_requests',
@@ -37,8 +36,10 @@ def test_sqlmodel_sink(test_source, db_session: Session):
     flow = get_log_parser_flow(source=test_source, sink=test_sink)
     run_main(flow)
 
-    records_count = select(func.count()).select_from(ResourceStatisticsByDay)
-    assert db_session.execute(records_count).scalar() == 5
+    with Session(sync_engine) as db_session:
+
+        records_count = select(func.count()).select_from(ResourceStatisticsByDay)
+        assert db_session.execute(records_count).scalar() == 5
 
 
 @pytest.mark.parametrize('log, expected', [

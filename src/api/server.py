@@ -8,15 +8,8 @@ from common import db
 from models import Base
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    engine = db.get_engine()
-    Base.metadata.create_all(engine)
-    yield
-
-
 def get_application() -> FastAPI:
-    _app = FastAPI(lifespan=lifespan)
+    _app = FastAPI()
 
     _app.include_router(customers_router)
     return _app

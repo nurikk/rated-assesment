@@ -4,18 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-fastapi = "*"
 pydantic = "*"
 pydantic-settings = "*"
 bytewax = "*"
-alembic = "*"
-sqlmodel = "*"
-asyncpg = "*"
-sqlalchemy = "*"
-tortoise-orm = {extras = ["asyncpg"], version = "*"}
-aerich = "*"
-psycopg = {extras = ["binary"], version = "*"}
+psycopg = {extras = ["binary"] }
 uvicorn = "*"
+fastapi = "*"
+sqlalchemy = {extras = ["asyncio"], version = "*"}
 
 [dev-packages]
 pytest = "*"
